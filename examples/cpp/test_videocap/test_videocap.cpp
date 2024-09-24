@@ -6,6 +6,10 @@
 
 #include <iostream>
 #include <vector>
+#include <fstream>
+#include <string>
+#include <chrono>
+#include <filesystem>
 
 #include <opencv2/opencv.hpp>
 
@@ -20,162 +24,87 @@
 
 #include "../console_arguments_parser/ConsoleArgumentsParser.h"
 
-int main(int argc, char** argv)
-{
-	try
-	{
-		std::cout << "Face tracking demo." << std::endl;
+namespace fs = std::filesystem;
 
-		#if defined(_WIN32)
-			const std::string default_dll_path = "facerec.dll";
-		#else
-			const std::string default_dll_path = "../lib/libfacerec.so";
-		#endif
+void saveResultsToCSV(const std::string& filename, const std::vector<std::string>& results, const std::vector<double>& times) {
+    std::ofstream file(filename);
+    file << "Image,Result,Time(ms)\n";
+    for (size_t i = 0; i < results.size(); ++i) {
+        file << i << "," << results[i] << "," << times[i] << "\n";
+    }
+}
 
-		// parse named params
-		ConsoleArgumentsParser parser(argc, argv);
-
+int main() {
+    try {
         const std::string dll_path = "facerec.dll";
         const std::string conf_dir_path = "conf/facerec";
         const std::string license_dir = "license";
-        const std::string video_capturer_config = "fda_tracker_capturer_blf.xml";
+        const std::string liveness2d_config = "liveness_2d_estimator_v2.xml";
 
-		// create facerec service
-		const pbio::FacerecService::Ptr service = pbio::FacerecService::createService(dll_path, conf_dir_path, license_dir);
+        // Распознавание лиц
+        const pbio::FacerecService::Ptr service = pbio::FacerecService::createService(dll_path, conf_dir_path, license_dir);
+        const pbio::Capturer::Ptr capturer = service->createCapturer("fda_tracker_capturer_blf.xml");
+        const pbio::Liveness2DEstimator::Ptr liveness_2d_estimator = service->createLiveness2DEstimator(liveness2d_config);
 
-		std::cout << "Library version: " << service->getVersion() << std::endl << std::endl;
+        // Директории с изображениями
+        std::string attack_folder = "C:/Users/User/test_task/raw/ImposterRaw";
+        std::string bona_fide_folder = "C:/Users/User/test_task/raw/ClientRaw";
 
-		// create capturer
-		const pbio::Capturer::Ptr capturer = service->createCapturer(video_capturer_config);
+        std::vector<std::string> results;
+        std::vector<double> times;
 
-		// create liveness2D estimator
-		std::string liveness2d_config = "liveness_2d_estimator_v2.xml";
-		const pbio::Liveness2DEstimator::Ptr liveness_2d_estimator = service->createLiveness2DEstimator(liveness2d_config);
+        // Обработка изображения
+        for (const auto& folder : { attack_folder, bona_fide_folder }) {
+            for (const auto& entry : fs::directory_iterator(folder)) {
+                pbio::CVRawImage image;
+                image.mat() = cv::imread(entry.path().string());
 
-		// open webcam via OpenCV
-		cv::VideoCapture camera(0);
+                if (image.mat().empty()) continue;
 
-		if(!camera.isOpened())
-		{
-			throw std::runtime_error("can't open webcam");
-		}
+                // Оценка
+                auto start = std::chrono::high_resolution_clock::now();
 
-		for(;;)
-		{
-			// get frame
-			pbio::CVRawImage image;
-			camera >> image.mat();
+                const std::vector<pbio::RawSample::Ptr> samples = capturer->capture(image);
+                std::string result_str;
 
-			if(image.mat().empty())
-				break;
+                for (const auto& sample : samples) {
+                    const pbio::Liveness2DEstimator::LivenessAndScore result = liveness_2d_estimator->estimate(*sample);
 
-			// track faces
-			const std::vector<pbio::RawSample::Ptr> samples = capturer->capture(image);
+                    // Результат
+                    std::stringstream ss;
+                    ss << std::fixed << std::setprecision(3) << result.score;
 
-			// estimate liveness
-			std::vector<std::string> liveness_res(samples.size(), "*");
-			for(size_t i = 0; i < samples.size(); ++i)
-			{
-				const pbio::Liveness2DEstimator::LivenessAndScore liveness_2d_result = liveness_2d_estimator->estimate(*samples[i]);
+                    switch (result.liveness) {
+                    case pbio::Liveness2DEstimator::FAKE:
+                        result_str = ss.str() + " - fake";
+                        break;
+                    case pbio::Liveness2DEstimator::REAL:
+                        result_str = ss.str() + " - real";
+                        break;
+                    default:
+                        result_str = "?";
+                        break;
+                    }
+                }
 
-				std::stringstream ss;
-				ss << std::fixed << std::setprecision(3) << liveness_2d_result.score;
-				std::string score_str = ss.str();
-				switch(liveness_2d_result.liveness)
-				{
-					case pbio::Liveness2DEstimator::NOT_ENOUGH_DATA:
-						liveness_res[i] = "?";
-						break;
-					case pbio::Liveness2DEstimator::FAKE:
-						liveness_res[i] = score_str + " - fake";
-						break;
-					case pbio::Liveness2DEstimator::REAL:
-						liveness_res[i] = score_str + " - real";
-						break;
-				}
-			}
+                auto end = std::chrono::high_resolution_clock::now();
+                double elapsed_time = std::chrono::duration<double, std::milli>(end - start).count();
 
-			// draw faces and liveness
-			cv::Mat draw = image.mat().clone();
-			for(size_t i = 0; i < samples.size(); ++i)
-			{
-				// get sample info
-				const pbio::RawSample::Rectangle rect = samples[i]->getRectangle();
-				const std::vector<pbio::RawSample::Point> all_points = samples[i]->getLandmarks();
-				const std::vector<pbio::RawSample::Point> all_iris_points = samples[i]->getIrisLandmarks();
+                results.push_back(result_str);
+                times.push_back(elapsed_time);
+            }
+        }
 
-				// draw red points
-				for(size_t j = 0; j < all_points.size(); ++j)
-				{
-					cv::circle(
-						draw,
-						cv::Point2f(all_points[j].x, all_points[j].y),
-						2, cv::Scalar(0, 0, 255), -1);
-				}
+        saveResultsToCSV("C:/Users/User/test_task/liveness_results.csv", results, times);
 
+    }
+    catch (const pbio::Error& e) {
+        std::cerr << "facerec exception catched: '" << e.what() << "' code: " << std::hex << e.code() << std::endl;
+    }
+    catch (const std::exception& e) {
+        std::cerr << "exception catched: '" << e.what() << "'" << std::endl;
+    }
 
-				// draw iris points
-				for(size_t j = 0; j < all_iris_points.size(); ++j)
-				{
-					float ms = 1;
-					auto color = cv::Scalar(0, 255, 255);
-					int oi = j - 20 * (j >= 20);
-					pbio::RawSample::Point pt1 = all_iris_points[j];
-					pbio::RawSample::Point pt2 = all_iris_points[(oi < 19 ? j : j - 15) + 1];
-
-					if(oi < 5)
-					{
-						if (oi == 0)
-						{
-							double radius = cv::norm(cv::Point2f(pt1.x, pt1.y) - cv::Point2f(pt2.x, pt2.y));
-							cv::circle(draw, cv::Point2f(pt1.x, pt1.y), radius, color, ms);
-						}
-					}else
-						cv::line(
-							draw,
-							cv::Point2f(pt1.x, pt1.y),
-							cv::Point2f(pt2.x, pt2.y),
-							color,
-							ms);
-
-					cv::circle(draw, cv::Point2f(pt1.x, pt1.y), ms, color, -1);
-				}
-
-				// draw green rectangle
-				cv::rectangle(
-					draw,
-					cv::Rect(rect.x, rect.y, rect.width, rect.height),
-					cv::Scalar(0, 255, 0), 2);
-
-				// print liveness
-				cv::putText(
-					draw,
-					liveness_res[i],
-					cv::Point2i(rect.x, rect.y),
-					cv::FONT_HERSHEY_DUPLEX,
-					0.8,
-					cv::Scalar(0, 0, 255),
-					2,
-					CV_AA);
-			}
-
-
-			// show drawed image
-			cv::imshow("draw", draw);
-
-			// exit on esc
-			if(27 == (uchar)cv::waitKey(15))
-				break;
-		}
-	}
-	catch(const pbio::Error &e)
-	{
-		std::cerr << "facerec exception catched: '" << e.what() << "' code: " << std::hex << e.code() << std::endl;
-	}
-	catch(const std::exception &e)
-	{
-		std::cerr << "exception catched: '" << e.what() << "'" << std::endl;
-	}
-
-	return 0;
+    return 0;
 }
+
