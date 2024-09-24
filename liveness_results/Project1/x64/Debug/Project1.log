@@ -1,0 +1,12 @@
+﻿  FileName.cpp
+C:\Users\User\source\repos\Project1\Project1\FileName.cpp(169,31): warning C4244: инициализация: преобразование "_Rep" в "double", возможна потеря данных
+C:\Users\User\source\repos\Project1\Project1\FileName.cpp(169,31): warning C4244:         with
+C:\Users\User\source\repos\Project1\Project1\FileName.cpp(169,31): warning C4244:         [
+C:\Users\User\source\repos\Project1\Project1\FileName.cpp(169,31): warning C4244:             _Rep=__int64
+C:\Users\User\source\repos\Project1\Project1\FileName.cpp(169,31): warning C4244:         ]
+C:\Users\User\source\repos\Project1\Project1\FileName.cpp(194,31): warning C4244: инициализация: преобразование "_Rep" в "double", возможна потеря данных
+C:\Users\User\source\repos\Project1\Project1\FileName.cpp(194,31): warning C4244:         with
+C:\Users\User\source\repos\Project1\Project1\FileName.cpp(194,31): warning C4244:         [
+C:\Users\User\source\repos\Project1\Project1\FileName.cpp(194,31): warning C4244:             _Rep=__int64
+C:\Users\User\source\repos\Project1\Project1\FileName.cpp(194,31): warning C4244:         ]
+  Project1.vcxproj -> C:\Users\User\source\repos\Project1\x64\Debug\Project1.exe
