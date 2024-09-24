@@ -35,10 +35,10 @@ int main(int argc, char** argv)
 		// parse named params
 		ConsoleArgumentsParser parser(argc, argv);
 
-		const std::string dll_path                = parser.get<std::string>("--dll_path                      ", default_dll_path);
-		const std::string conf_dir_path           = parser.get<std::string>("--config_dir                    ", "../conf/facerec");
-		const std::string license_dir             = parser.get<std::string>("--license_dir                   ", "../license");
-		const std::string video_capturer_config   = parser.get<std::string>("--video_capturer_config         ", "fda_tracker_capturer_blf.xml");
+        const std::string dll_path = "facerec.dll";
+        const std::string conf_dir_path = "conf/facerec";
+        const std::string license_dir = "license";
+        const std::string video_capturer_config = "fda_tracker_capturer_blf.xml";
 
 		// create facerec service
 		const pbio::FacerecService::Ptr service = pbio::FacerecService::createService(dll_path, conf_dir_path, license_dir);

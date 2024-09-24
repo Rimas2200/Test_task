@@ -904,7 +904,7 @@ template<bool isConst>
 Context::ContextArrayIterator<isConst>& Context::ContextArrayIterator<isConst>::operator++() {
 	if(curr_)
 		delete curr_;
-	index_ = std::min(index_+1, length_);
+	index_ = std::min<size_t>(index_ + 1, length_);
 	if(isObj_)
 		curr_ = (index_ < length_) ? new Context(base_[keys_->operator[](index_)]) : nullptr;
 	else
@@ -915,7 +915,7 @@ Context::ContextArrayIterator<isConst>& Context::ContextArrayIterator<isConst>::
 template<bool isConst>
 Context::ContextArrayIterator<isConst> Context::ContextArrayIterator<isConst>::operator++(int) {
 	ContextArrayIterator tmp = *this;
-	index_ = std::min(index_+1, length_);
+	index_ = std::min<size_t>(index_ + 1, length_);
 	if(isObj_)
 		curr_ = (index_ < length_) ? new Context(base_[keys_->operator[](index_)]) : nullptr;
 	else

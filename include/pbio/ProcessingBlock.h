@@ -67,7 +67,7 @@ public:
 		if(handle_)
 		{
 			dll_handle_->TDVProcessingBlock_destroyBlock(handle_,  &eh_);
-			if (eh_ && std::uncaught_exception())
+			if (eh_ && std::uncaught_exceptions())
 				std::cerr << Error(dll_handle_->TDVException_getErrorCode(eh_), dll_handle_->TDVException_getMessage(eh_)).what();
 			else
 				tdvCheckException(dll_handle_, eh_);
