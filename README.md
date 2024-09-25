@@ -25,6 +25,7 @@ cmake --build .
 [2d_light_version_3.csv](graphic/2d_light_version_3.csv)
 
 5) Реализован на Python скрипт, который строит график APCER и BPCER в зависимости от порога по liveness_score, а также выводит среднее время ответа.
+[graphic.py](graphic/graphic.py) 
 
 <div align="center">
     <img src="graphic/2d_light, version 3.png" alt="2d_light version 3" width="500"/>
