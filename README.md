@@ -31,5 +31,5 @@ cmake --build .
     <img src="liveness_results/Liveness_Detection.png" alt="Liveness Detection" width="500"/>
 </div>
 
-6) [Реализована на С++ алгоритмический Liveness Detection](Liveness_Detection/Liveness_Detection.cpp), который работает быстрее чем 2d_light, version 3.
+6) [Реализован на С++ алгоритмический Liveness Detection](Liveness_Detection/Liveness_Detection.cpp), который работает быстрее чем 2d_light, version 3.
 [CSV файл с результатами](liveness_results/Liveness_Detection.csv)
