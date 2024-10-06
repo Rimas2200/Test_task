@@ -33,3 +33,6 @@ cmake --build .
 
 6) [Реализован на С++ алгоритмический Liveness Detection](Liveness_Detection/Liveness_Detection.cpp), который работает быстрее чем 2d_light, version 3.
 [CSV файл с результатами](liveness_results/Liveness_Detection.csv)
+
+7) Среднее время обработки одного изображения с помощью 2d_light_v3 - 23 мс
+8) Среднее время обработки одного изображения с помощью алгоритмического Liveness Detection - 6 мс
