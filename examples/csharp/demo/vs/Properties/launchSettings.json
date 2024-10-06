@@ -1,8 +1,0 @@
-{
-    "profiles": {
-        "csharp_demo": {
-            "commandName": "Project",
-            "commandLineArgs": "--config_dir ../../../../../../../conf/facerec"
-        }
-    }
-}
